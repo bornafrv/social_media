@@ -1,0 +1,569 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define OK 1
+
+struct post
+{
+    char *user;
+    char *post_text;
+    int like;
+    int id_post;
+    struct post *next_post;
+};
+
+struct people
+{
+    char *username;
+    char *password;
+    struct post *fst_post;
+    struct people *next_person;
+};
+
+typedef struct post post;
+typedef struct people people;
+
+char *input_data(void);
+char *input_text_post(void);
+int input_order(void);
+int search_person(people *head, char *new_username);
+int search_pass(people *head, char *new_pass);
+people *create_user(char *new_username, char *new_password);
+void add_node_to_list(people *head, people *new_user);
+int sign_up(people *head, int *flag);
+people *login(people *head, int *flag);
+people *search_switch_user(people *head, char *username);
+post *last_post(people *account);
+int posting_txt(people *account, int *flag);
+int logout(people *account, int *flag);
+int delete_post(people *account, int *flag);
+int info_prnt(people *account, int *flag);
+int find_user(people *head, int *flag);
+int like_post(people *head, int *flag);
+char *error(void);
+void write_file(people *head);
+
+void main()
+{
+    int flag = 0;
+    people *head = (people *)malloc(sizeof(people));
+    head->next_person = NULL;
+    people *account = NULL;
+    while (OK)
+    {
+        int ord = input_order();
+        if (ord == 0)
+            error();
+        if (ord == 1)
+            sign_up(head, &flag);
+        if (ord == 2)
+            account = login(head, &flag);
+        if (ord == 3)
+            logout(account, &flag);
+        if (ord == 4)
+            info_prnt(account, &flag);
+        if (ord == 5)
+            find_user(head, &flag);
+        if (ord == 6)
+            posting_txt(account, &flag);
+        if (ord == 7)
+            like_post(head, &flag);
+        if (ord == 8)
+            delete_post(account, &flag);
+        if (ord == 9)
+        {
+            write_file(head);
+            break;
+        }
+    }
+}
+
+int input_order(void)
+{
+    int counter = 0;
+    char *order = (char *)malloc(sizeof(char));
+    order[counter] = getchar();
+    while (order[counter] != ' ' && order[counter] != '\n')
+    {
+        order = realloc(order, (counter + 2) * sizeof(char));
+        counter++;
+        order[counter] = getchar();
+    }
+    /*input order with malloc*/
+    order[counter] = '\0';
+    if (strcmp(order, "signup") == 0)
+    {
+        free(order);
+        return 1;
+    }
+    if (strcmp(order, "login") == 0)
+    {
+        free(order);
+        return 2;
+    }
+    if (strcmp(order, "logout") == 0)
+    {
+        free(order);
+        return 3;
+    }
+    if (strcmp(order, "info") == 0)
+    {
+        free(order);
+        return 4;
+    }
+    if (strcmp(order, "find_user") == 0)
+    {
+        free(order);
+        return 5;
+    }
+    if (strcmp(order, "post") == 0)
+    {
+        free(order);
+        return 6;
+    }
+    if (strcmp(order, "like") == 0)
+    {
+        free(order);
+        return 7;
+    }
+    if (strcmp(order, "delete") == 0)
+    {
+        free(order);
+        return 8;
+    }
+    if (strcmp(order, "exit") == 0)
+    {
+        free(order);
+        return 9;
+    }
+    /*compare input with 8 order*/
+    return 0;
+}
+char *input_data(void)
+{
+    int count = 0;
+    char *input_data = (char *)malloc(sizeof(char));
+    input_data[count] = getchar();
+    while ((input_data[count] != ' ') && (input_data[count] != '\n'))
+    {
+        input_data = (char *)realloc(input_data, (count + 2) * sizeof(char));
+        count++;
+        input_data[count] = getchar();
+    }
+    input_data[count] = '\0';
+    return input_data;
+    /*input string_data with malloc*/
+}
+char *input_text_post(void)
+{
+    int count = 0;
+    char *input_data = (char *)malloc(sizeof(char));
+    input_data[count] = getchar();
+    while (input_data[count] != '\n')
+    {
+        input_data = (char *)realloc(input_data, (count + 2) * sizeof(char));
+        count++;
+        input_data[count] = getchar();
+    }
+    input_data[count] = '\0';
+    return input_data;
+    /*input post_string with malloc*/
+}
+int search_person(people *head, char *new_username)
+{
+    if (head->next_person == NULL)
+        return 1;
+    people *temp = head->next_person;
+    while (temp->next_person != NULL)
+    {
+        int val = strcmp(temp->username, new_username); /*compare string_data and username in node*/
+        if (val == 0)
+        {
+            return 0;
+        }
+        if (val != 0)
+        {
+            temp = temp->next_person; /*go to next node*/
+        }
+    }
+    /*chek all nodes */
+    if (temp->next_person == NULL)
+    {
+        int val = strcmp(temp->username, new_username);
+        if (val == 0)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+int search_pass(people *head, char *new_pass)
+{
+    if (head->next_person == NULL)
+        return 1;
+    people *temp = head->next_person;
+    while (temp->next_person != NULL)
+    {
+        int val = strcmp(temp->password, new_pass);
+        if (val == 0)
+        {
+            return 0;
+        }
+        if (val != 0)
+        {
+            temp = temp->next_person;
+        }
+    }
+    if (temp->next_person == NULL)
+    {
+        int val = strcmp(temp->password, new_pass);
+        if (val == 0)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+people *create_user(char *new_username, char *new_password)
+{
+    people *new_user = (people *)malloc(sizeof(people));
+    new_user->username = new_username;
+    new_user->password = new_password;
+    post *first_post_node = (post *)malloc(sizeof(post));
+    new_user->fst_post = first_post_node;
+    new_user->fst_post->id_post = 0;
+    new_user->fst_post->like = 0;
+    new_user->fst_post->post_text = "-";
+    new_user->fst_post->user = new_username;
+    new_user->fst_post->next_post = NULL;
+    new_user->next_person = NULL;
+    return new_user;
+    /*put input_information in node*/
+}
+void add_node_to_list(people *head, people *new_user)
+{
+    people *temp = head;
+    while (temp->next_person != NULL)
+    {
+        temp = temp->next_person;
+    }
+    temp->next_person = new_user; /*find last node*/
+    new_user->next_person = NULL;
+}
+int sign_up(people *head, int *flag)
+{
+    if (*flag == 1)
+    {
+        printf("You can not signup\nYou should logout first\n");
+        return 0;
+    }
+    if (*flag == 0)
+    {
+        char *username = input_data();
+        char *password = input_data();
+        int repeated_user = search_person(head, username); /*check that we have this user before or not*/
+        if (repeated_user == 0)
+        {
+            printf("We have this user before\n");
+            return 0;
+        }
+        if (repeated_user == 1)
+        {
+            people *new_user = create_user(username, password);
+            add_node_to_list(head, new_user);
+            printf("You sign in our social media\nWelcome\n");
+            return 1;
+        }
+    }
+}
+people *login(people *head, int *flag)
+{
+    if (*flag == 1)
+    {
+        printf("You can not login\nYou should logout first\n");
+        return NULL;
+    }
+    if (*flag == 0)
+    {
+        char *username = input_data();
+        char *password = input_data();
+        people *search_for_valid_user = search_switch_user(head, username); /*check that we have this user before or not*/
+        if (search_for_valid_user == NULL)
+        {
+            printf("User not found\n");
+            return NULL;
+        }
+        if (search_for_valid_user != NULL)
+        {
+            int true_pass = strcmp(search_for_valid_user->password, password); /*check node_pass and input_pass*/
+            if (true_pass != 0)
+            {
+                printf("Wrong password\n");
+                return NULL;
+            }
+            if (true_pass == 0)
+            {
+                *flag = 1;
+                printf("Done!\nYou login your account\n");
+                return search_for_valid_user;
+            }
+        }
+    }
+}
+people *search_switch_user(people *head, char *username)
+{
+    if (head->next_person == NULL)
+        return NULL;
+    people *temp = head->next_person;
+    while (temp->next_person != NULL)
+    {
+        int val = strcmp(temp->username, username); /*compare string_data and username in node*/
+        if (val == 0)
+            return temp;
+        temp = temp->next_person; /*go to next node*/
+    }
+    /*check all nodes*/
+    if (temp->next_person == NULL)
+    {
+        int val = strcmp(temp->username, username);
+        if (val == 0)
+            return temp;
+    }
+    return NULL;
+    /*put information in the node in account pointer*/
+}
+int posting_txt(people *account, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("First login or signup a new user\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        post *last = last_post(account);
+        char *text = input_text_post();
+        int count;
+        for (int i = 0; text[i] != '\0'; i++)
+            count = i;
+        post *new_post = (post *)malloc(sizeof(people));
+        new_post->like = 0;
+        new_post->user = account->username;
+        new_post->id_post = 1 + (last->id_post);
+        // new_post->post_text = (char *)malloc(sizeof(char) * count);
+        new_post->post_text = text;
+        last->next_post = new_post;
+        new_post->next_post = NULL;
+    }
+}
+post *last_post(people *account)
+{
+    post *temp = account->fst_post;
+    while (temp->next_post != NULL)
+    {
+        temp = temp->next_post;
+    }
+    return temp; /*last find post in all*/
+}
+int logout(people *account, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("You are not login\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        *flag = 0;
+        printf("Done!\nLogout your account\n");
+        return 1;
+    }
+}
+int delete_post(people *account, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("First login or signup a new user\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        int id;
+        scanf("%d", &id);
+        post *prev = account->fst_post;
+        post *cur = account->fst_post->next_post;
+        if (cur == NULL)
+        {
+            printf("You don't have any post in your account\n");
+            return 0;
+        }
+        while (cur->next_post != NULL)
+        {
+            if (cur->id_post == id)
+            {
+                prev->next_post = cur->next_post;
+                cur->next_post = NULL;
+                free(cur);
+                printf("Delete post with id:%d\n", id);
+                return 1;
+            }
+            /*find the post and delete it and joining others post*/
+            prev->next_post = cur;
+            cur = cur->next_post;
+        }
+        if (cur->next_post == NULL)
+        {
+            if (cur->id_post == id)
+            {
+                prev->next_post = cur->next_post;
+                free(cur);
+                printf("Delete post with id:%d\n", id);
+                return 1;
+            }
+        }
+        printf("Don't have this id post\n");
+        return 0;
+    }
+}
+int info_prnt(people *account, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("First login or signup a new user\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        printf("username:%s\n", account->username);
+        printf("password:%s\n\n", account->password);
+        post *temp = account->fst_post->next_post;
+        while (temp->next_post != NULL)
+        {
+            printf("user:%s\npost text:%s\npost id:%d\nlike:%d\n", temp->user, temp->post_text, temp->id_post, temp->like);
+            printf("---------------------------------------------------------------\n");
+            temp = temp->next_post;
+        }
+        printf("user:%s\npost text:%s\npost id:%d\nlike:%d\n", temp->user, temp->post_text, temp->id_post, temp->like);
+        return 1;
+    }
+}
+int find_user(people *head, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("First login or signup a new user\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        char *serched_user = input_data();
+        people *found_user = search_switch_user(head, serched_user);
+        if (found_user != NULL)
+        {
+            printf("username:%s\n", found_user->username);
+            printf("password:%s\n\n", found_user->password);
+            post *temp = found_user->fst_post->next_post;
+            while (temp->next_post != NULL)
+            {
+                printf("user:%s\npost text:%s\npost id:%d\nlike:%d\n", temp->user, temp->post_text, temp->id_post, temp->like);
+                printf("---------------------------------------------------------------\n");
+                temp = temp->next_post;
+            }
+            printf("user:%s\npost text:%s\npost id:%d\nlike:%d\n", temp->user, temp->post_text, temp->id_post, temp->like);
+            return 1;
+        }
+        if (found_user == NULL)
+        {
+            printf("Invalid User\n");
+            return 0;
+        }
+    }
+}
+int like_post(people *head, int *flag)
+{
+    if (*flag == 0)
+    {
+        printf("First login or signup a new user\n");
+        return 0;
+    }
+    if (*flag == 1)
+    {
+        char *username = input_data(); /*input user*/
+        int id;
+        scanf("%d", &id);
+        people *found_user = search_switch_user(head, username);
+        if (found_user == NULL)
+        {
+            printf("Invalid User\n");
+            return 0;
+        }
+        if (found_user != NULL)
+        {
+            post *temp_post = found_user->fst_post->next_post;
+            while (temp_post->next_post != NULL)
+            {
+                if (temp_post->id_post == id)
+                {
+                    temp_post->like += 1;
+                    printf("Like\n");
+                    return 1;
+                }
+                temp_post = temp_post->next_post;
+            }
+            if (temp_post->next_post == NULL)
+            {
+                if (temp_post->id_post == id)
+                {
+                    temp_post->like += 1;
+                    printf("Like\n");
+                    return 1;
+                }
+            }
+            printf("Don't have post with id %d\n", id);
+            return 0;
+        }
+    }
+}
+char *error(void)
+{
+    int count = 0;
+    char *input_data = (char *)malloc(sizeof(char));
+    input_data[count] = getchar();
+    while (input_data[count] != '\n')
+    {
+        input_data = (char *)realloc(input_data, (count + 2) * sizeof(char));
+        count++;
+        input_data[count] = getchar();
+    }
+    input_data[count] = '\0';
+    /*get all of the characters and clear stack*/
+    printf("Don't have this order\n");
+    return input_data;
+}
+void write_file(people *head)
+{
+    FILE *fp = fopen("accounts.txt", "w");
+    FILE *f2p = fopen("posts.txt", "w");
+    people *temp = head->next_person;
+    while (temp != NULL)
+    {
+        post *cur = temp->fst_post->next_post;
+        printf("%s ", temp->username);
+        printf("%s ", temp->password);
+        fprintf(fp, "%s ", temp->username);
+        fprintf(fp, "%s ", temp->password);
+        int count = 0;
+        while (cur != NULL)
+        {
+            fprintf(f2p, "%s ", cur->post_text);
+            fprintf(f2p, "%s ", cur->user);
+            fprintf(f2p, "%d\n", cur->like);
+            cur = cur->next_post;
+            count++;
+        }
+        fprintf(fp, "%d\n", count);
+        temp = temp->next_person;
+    }
+    fclose(fp);
+    fclose(f2p);
+}
